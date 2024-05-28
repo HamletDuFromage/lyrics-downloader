@@ -19,7 +19,16 @@ class Downloader:
         self.lyrics_url = "https://music.xianqiao.wang/neteaseapiv2/lyric?id="
         self.timestamp_pattern = re.compile(r"\[\d\d:\d\d(?:.\d+)?\]")
         self.filename_pattern = re.compile(r"(.+)(?=\.\w+$)")
+        self.f_unsuccessful_fetches = "unsuccessful_fetches.txt"
+        self.unsuccessful_fetches = self.load_unsuccessful_fetches()
         self.blacklisted_genres = blacklisted_genres
+
+    def load_unsuccessful_fetches(self):
+        try:
+            with open(self.f_unsuccessful_fetches, "r") as file:
+                return set(file.read().split("\n"))
+        except FileNotFoundError:
+            return {}
 
     def search_song(self, keywords):
         url = urllib.parse.quote(f"{self.search_url}{keywords}", safe=":/?=&")
@@ -39,8 +48,8 @@ class Downloader:
 
     def write_lrc_file(self, lyrics, stem):
         filename = stem + ".lrc"
-        with open(filename, 'w') as lrc_file:
-            lrc_file.write(lyrics)
+        with open(filename, 'a') as lrc_file:
+            lrc_file.write(f"{lyrics}")
         log.info(f"🤙 {filename} has been written to disk")
 
     def verify_lyrics(self, lyrics):
@@ -51,6 +60,10 @@ class Downloader:
                 lyrics = re.sub(r'(^\[\d{2}:\d{2}\.\d{2})\d(\])', r'\1\2', lyrics, flags=re.MULTILINE)
                 return lyrics
         return None
+    
+    def write_unsuccessful_fetches_to_disk(self, track):
+        with open(self.f_unsuccessful_fetches, "a") as file:
+            file.write(f"{track}\n")
 
     def run(self, filename):
         try:
@@ -59,6 +72,9 @@ class Downloader:
             log.debug(f"{filename} is not a song")
             return False
         title = tags.title
+        if f"{title} {tags.artist}" in self.unsuccessful_fetches:
+            log.debug(f"Skipping {title} since it's been tried before")
+            return False
         for genre in self.blacklisted_genres:
             try:
                 if genre.lower() in tags.genre.lower():
@@ -77,6 +93,7 @@ class Downloader:
                 self.write_lrc_file(lyrics, stem)
                 return True
         log.error(f"Couldn't find lyrics for {title}")
+        self.write_unsuccessful_fetches_to_disk(f"{title} {tags.artist}")
         return False
 
 class Crawler:
@@ -116,7 +133,7 @@ log_dict = {
     "WARNING": logging.WARNING,
     "ERROR": logging.ERROR
 }
-LOG_LEVEL = log_dict.get(args.log_level, "INFO")
+LOG_LEVEL = log_dict.get(args.log_level.upper(), "INFO")
 LOGFORMAT = "%(log_color)s%(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"
 logging.root.setLevel(LOG_LEVEL)
 formatter = ColoredFormatter(LOGFORMAT)

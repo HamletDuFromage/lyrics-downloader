@@ -1,4 +1,5 @@
 *.flac
 *.mp3
 *.lrc
+*.txt
 venv/
