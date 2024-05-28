@@ -56,7 +56,7 @@ class Downloader:
         try:
             tags = TinyTag.get(filename)
         except TinyTagException:
-            log.info(f"{filename} is not a song")
+            log.debug(f"{filename} is not a song")
             return False
         title = tags.title
         for genre in self.blacklisted_genres:
@@ -107,12 +107,13 @@ required = parser.add_argument_group('Required arguments')
 required.add_argument('-p', '--path', help='directory or filepath', required=True)
 optional = parser.add_argument_group('Optional arguments')
 optional.add_argument('-g', '--blacklisted_genres', nargs='+', help='blacklisted genres', required=False, default=[])
-optional.add_argument('-l', '--log_level', help='log level (DEBUG, INFO, ERROR)', required=False, default="INFO")
+optional.add_argument('-l', '--log_level', help='log level (DEBUG, INFO, WARNING, ERROR)', required=False, default="INFO")
 args = parser.parse_args()
 
 log_dict = {
     "DEBUG": logging.DEBUG,
     "INFO": logging.INFO,
+    "WARNING": logging.WARNING,
     "ERROR": logging.ERROR
 }
 LOG_LEVEL = log_dict.get(args.log_level, "INFO")
