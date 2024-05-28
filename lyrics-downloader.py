@@ -8,6 +8,7 @@ from tinytag import TinyTag
 from tinytag import TinyTagException
 import re
 import os
+from unidecode import unidecode
 from colorlog import ColoredFormatter
 
 LOG_LEVEL = logging.DEBUG
@@ -26,8 +27,8 @@ class Downloader:
         search_limit = 3 #Lower means higher confidence and lower waiting time for instrumental songs
         self.search_url = f"https://music.xianqiao.wang/neteaseapiv2/search?limit={search_limit}&type=1&keywords="
         self.lyrics_url = "https://music.xianqiao.wang/neteaseapiv2/lyric?id="
-        self.timestamp_pattern = re.compile("\[\d\d:\d\d(?:.\d+)?\]")
-        self.filename_pattern = re.compile("(.+)(?=\.\w+$)")
+        self.timestamp_pattern = re.compile(r"\[\d\d:\d\d(?:.\d+)?\]")
+        self.filename_pattern = re.compile(r"(.+)(?=\.\w+$)")
         self.blacklisted_genres = blacklisted_genres
 
     def search_song(self, keywords):
@@ -55,7 +56,8 @@ class Downloader:
     def verify_lyrics(self, lyrics):
         if self.timestamp_pattern.match(lyrics):
             if len(lyrics.split('\n')) > 3:
-                lyrics = re.sub(r'($\[\d{2}:\d{2}\.\d{2})\d(\])', r'\1\2', lyrics)
+                lyrics = unidecode(lyrics)
+                lyrics = re.sub(r'(^\[\d{2}:\d{2}\.\d{2})\d(\])', r'\1\2', lyrics)
                 lyrics = lyrics.replace("作词", "Songwriter").replace("作曲", "Composer")
                 return lyrics
         return None
