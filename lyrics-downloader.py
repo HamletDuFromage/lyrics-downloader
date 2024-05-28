@@ -11,16 +11,6 @@ import os
 from unidecode import unidecode
 from colorlog import ColoredFormatter
 
-LOG_LEVEL = logging.DEBUG
-LOGFORMAT = "  %(log_color)s%(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"
-logging.root.setLevel(LOG_LEVEL)
-formatter = ColoredFormatter(LOGFORMAT)
-stream = logging.StreamHandler()
-stream.setLevel(LOG_LEVEL)
-stream.setFormatter(formatter)
-log = logging.getLogger('pythonConfig')
-log.setLevel(LOG_LEVEL)
-log.addHandler(stream)
 
 class Downloader:
     def __init__(self, blacklisted_genres = []) -> None:
@@ -51,7 +41,7 @@ class Downloader:
         filename = stem + ".lrc"
         with open(filename, 'w') as lrc_file:
             lrc_file.write(lyrics)
-        log.info(f"🤙🤙🤙 {filename} has been written to disk 🤙🤙🤙")
+        log.info(f"🤙 {filename} has been written to disk")
 
     def verify_lyrics(self, lyrics):
         if self.timestamp_pattern.match(lyrics):
@@ -80,7 +70,7 @@ class Downloader:
         if os.path.exists(stem + ".lrc"):
             log.info(f"{title} already has an associated lyrics file")
             return False
-        log.info(f"Fetching lyrics for {title}")
+        log.info(f"Fetching lyrics for {title} ({tags.genre})")
         for song in self.search_song(f"{title} {tags.artist}"):
             lyrics = self.fetch_synced_lyrics(song["id"])
             if lyrics is not None:
@@ -112,13 +102,29 @@ class Crawler:
             self.success_count += 1
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Download synced lyrics from NetEase Cloud Music")
-    required = parser.add_argument_group('Required arguments')
-    required.add_argument('-p', '--path', help='directory or filepath', required=True)
-    optional = parser.add_argument_group('Optional arguments')
-    optional.add_argument('-g', '--blacklisted_genres', nargs='+', help='blacklisted genres', required=False, default=[])
-    args = parser.parse_args()
+parser = argparse.ArgumentParser(description="Download synced lyrics from NetEase Cloud Music")
+required = parser.add_argument_group('Required arguments')
+required.add_argument('-p', '--path', help='directory or filepath', required=True)
+optional = parser.add_argument_group('Optional arguments')
+optional.add_argument('-g', '--blacklisted_genres', nargs='+', help='blacklisted genres', required=False, default=[])
+optional.add_argument('-l', '--log_level', help='log level (DEBUG, INFO, ERROR)', required=False, default="INFO")
+args = parser.parse_args()
 
-    cr = Crawler(args.path, args.blacklisted_genres)
-    print(f"🎷🎷🎷 Successfully downloaded {cr.success_count} .lrc files! 🎷🎷🎷")
+log_dict = {
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
+    "ERROR": logging.ERROR
+}
+LOG_LEVEL = log_dict.get(args.log_level, "INFO")
+LOGFORMAT = "%(log_color)s%(levelname)-8s%(reset)s | %(log_color)s%(message)s%(reset)s"
+logging.root.setLevel(LOG_LEVEL)
+formatter = ColoredFormatter(LOGFORMAT)
+stream = logging.StreamHandler()
+stream.setLevel(LOG_LEVEL)
+stream.setFormatter(formatter)
+log = logging.getLogger('pythonConfig')
+log.setLevel(LOG_LEVEL)
+log.addHandler(stream)
+
+cr = Crawler(args.path, args.blacklisted_genres)
+print(f"🎷 Successfully downloaded {cr.success_count} .lrc files!")
