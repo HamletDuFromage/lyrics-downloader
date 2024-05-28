@@ -73,7 +73,7 @@ class Downloader:
             return False
         title = tags.title
         if f"{title} {tags.artist}" in self.unsuccessful_fetches:
-            log.debug(f"Skipping {title} since it's been tried before")
+            log.info(f"Skipping {title} since it's been tried before")
             return False
         for genre in self.blacklisted_genres:
             try:
