@@ -56,9 +56,9 @@ class Downloader:
     def verify_lyrics(self, lyrics):
         if self.timestamp_pattern.match(lyrics):
             if len(lyrics.split('\n')) > 3:
+                lyrics = lyrics.replace("作词", "Songwriter").replace("作曲", "Composer")
                 lyrics = unidecode(lyrics)
                 lyrics = re.sub(r'(^\[\d{2}:\d{2}\.\d{2})\d(\])', r'\1\2', lyrics, flags=re.MULTILINE)
-                lyrics = lyrics.replace("作词", "Songwriter").replace("作曲", "Composer")
                 return lyrics
         return None
 
